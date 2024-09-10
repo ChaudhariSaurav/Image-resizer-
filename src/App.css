@@ -1,0 +1,18 @@
+/* Add this to your global CSS file or the main component's CSS module */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.main-content {
+  padding-top: 60px; /* Adjust according to your navbar height */
+}
+
+.ico {
+    background-image: url('https://cdn.icon-icons.com/icons2/1381/PNG/512/com_94698.png');
+    width: 32px; /* Adjust width as needed */
+    height: 32px; /* Adjust height as needed */
+    background-size: contain;
+    background-repeat: no-repeat;
+}
