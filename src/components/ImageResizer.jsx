@@ -37,7 +37,7 @@ const ImageResizer = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [resizeCount, setResizeCount] = useState(0);
-  const [resizeLimit, setResizeLimit] = useState(0);
+  const [resizeLimit, setResizeLimit] = useState(5);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
