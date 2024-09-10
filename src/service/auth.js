@@ -5,7 +5,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { ref, set, get } from "firebase/database";
+import { ref, set, get, update } from "firebase/database";
 import {
   ref as storageRef,
   uploadBytes,
@@ -58,7 +58,11 @@ const registerUser = async (
       email,
       mobile,
       dob,
+      password,
       profileImageURL,
+      plan: "Free Plan",
+      createdAt: new Date().toISOString(), // Use Firebase server timestamp if possible
+      updatedAt: new Date().toISOString(), // Use Firebase server timestamp if possible
     });
 
     return user;
@@ -128,6 +132,9 @@ const updateUserProfile = async (user) => {
         isProfileImageVisible: true,
         phone: user.phoneNumber,
         profileImageURL: user.photoURL,
+        plan: "Free Plan",
+        createdAt: new Date().toISOString(), // Use Firebase server timestamp if possible
+        updatedAt: new Date().toISOString(), // Use Firebase server timestamp if possible
       });
     }
   } catch (error) {

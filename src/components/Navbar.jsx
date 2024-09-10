@@ -22,6 +22,7 @@ import {
   FaBars,
   FaTimes,
   FaSignOutAlt,
+  FaCompress
 } from "react-icons/fa";
 import useDataStore from "../zustand/userDataStore";
 import { userSignOut } from "../service/auth";
@@ -45,10 +46,14 @@ const Navbar = () => {
     }
   };
 
+  const handleLogin = ()=>{
+    window.location.href="/login"
+  }
+
   const navItems = [
     { name: "Home", icon: FaHome, href: "/" },
-    { name: "Features", icon: FaInfoCircle, href: "#features" },
     { name: "Pricing", icon: FaDollarSign, href: "#pricing" },
+    { name: "Resizing", icon:FaCompress, href: "#resizing_tool" },
     { name: "Testimonials", icon: FaComments, href: "#testimonials" },
     { name: "Contact", href: "#contact" },
   ];
@@ -172,6 +177,7 @@ const Navbar = () => {
               <Button
                 colorScheme="teal"
                 variant="outline"
+                onClick={handleLogin}
                 leftIcon={<FaSignInAlt />}
               >
                 Login

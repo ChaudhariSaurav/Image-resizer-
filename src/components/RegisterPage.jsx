@@ -9,9 +9,11 @@ import {
   Text,
   Box,
   useToast,
+  Link,
 } from "@chakra-ui/react";
 import { registerUser } from "../service/auth";
 import { useDropzone } from "react-dropzone";
+import { ChevronLeftIcon } from "@chakra-ui/icons";
 
 const RegisterPage = () => {
   const {
@@ -29,7 +31,10 @@ const RegisterPage = () => {
     setProfileImage(acceptedFiles[0]);
   }, []);
 
-  const { getRootProps, getInputProps } = useDropzone({ onDrop });
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: 'image/*',
+  });
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -40,23 +45,17 @@ const RegisterPage = () => {
         throw new Error("Please upload a profile image.");
       }
 
-      const result = await registerUser(
+      await registerUser(
         email,
         password,
         name,
         dob,
         mobileNo,
-        profileImage,
+        profileImage
       );
-
-      if (result instanceof Error) {
-        throw result;
-      }
 
       // Reset form fields
       reset();
-
-      // Clear the profile image
       setProfileImage(null);
 
       toast({
@@ -80,10 +79,25 @@ const RegisterPage = () => {
   };
 
   const password = watch("password");
-  const confirmPassword = watch("confirmPassword");
 
   return (
-    <Box maxW="md" mx="auto" p={4}>
+    <Box
+      maxW="md"
+      mx="auto"
+      p={4}
+      borderWidth={1}
+      width="100%"
+      maxWidth="500px"
+      borderRadius="md"
+      mb={5}
+      mt={5}
+    >
+      <Box textAlign="center" mb={8}>
+        <Text fontSize="2xl" fontWeight="bold">
+          Sign up to your account
+        </Text>
+      </Box>
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={4}>
           <FormControl isInvalid={!!errors.name}>
@@ -96,8 +110,7 @@ const RegisterPage = () => {
                 <Input
                   id="name"
                   placeholder="Enter your name"
-                  value={field.value || ""} // Ensure controlled input
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
@@ -121,14 +134,11 @@ const RegisterPage = () => {
                   id="email"
                   type="email"
                   placeholder="Enter your email"
-                  value={field.value || ""} // Ensure controlled input
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
-            {errors.email && (
-              <Text color="red.500">{errors.email.message}</Text>
-            )}
+            {errors.email && <Text color="red.500">{errors.email.message}</Text>}
           </FormControl>
 
           <FormControl isInvalid={!!errors.mobileNo}>
@@ -147,14 +157,11 @@ const RegisterPage = () => {
                 <Input
                   id="mobileNo"
                   placeholder="Enter your mobile number"
-                  value={field.value || ""} // Ensure controlled input
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
-            {errors.mobileNo && (
-              <Text color="red.500">{errors.mobileNo.message}</Text>
-            )}
+            {errors.mobileNo && <Text color="red.500">{errors.mobileNo.message}</Text>}
           </FormControl>
 
           <FormControl isInvalid={!!errors.password}>
@@ -174,14 +181,11 @@ const RegisterPage = () => {
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  value={field.value || ""} // Ensure controlled input
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
-            {errors.password && (
-              <Text color="red.500">{errors.password.message}</Text>
-            )}
+            {errors.password && <Text color="red.500">{errors.password.message}</Text>}
           </FormControl>
 
           <FormControl isInvalid={!!errors.confirmPassword}>
@@ -199,14 +203,11 @@ const RegisterPage = () => {
                   id="confirmPassword"
                   type="password"
                   placeholder="Confirm your password"
-                  value={field.value || ""} // Ensure controlled input
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
-            {errors.confirmPassword && (
-              <Text color="red.500">{errors.confirmPassword.message}</Text>
-            )}
+            {errors.confirmPassword && <Text color="red.500">{errors.confirmPassword.message}</Text>}
           </FormControl>
 
           <FormControl isInvalid={!!errors.dob}>
@@ -219,8 +220,7 @@ const RegisterPage = () => {
                 <Input
                   id="dob"
                   type="date"
-                  value={field.value || ""} // Ensure controlled input
-                  onChange={field.onChange}
+                  {...field}
                 />
               )}
             />
@@ -240,17 +240,28 @@ const RegisterPage = () => {
               {profileImage ? (
                 <Text>{profileImage.name}</Text>
               ) : (
-                <Text>
-                  Drag & drop a profile image here, or click to select one
-                </Text>
+                <Text>Drag & drop a profile image here, or click to select one</Text>
               )}
             </Box>
+            {profileImage && (
+              <Box mt={2}>
+                <Text fontSize="sm">Selected file:</Text>
+                <Text>{profileImage.name}</Text>
+              </Box>
+            )}
           </FormControl>
 
           <Button colorScheme="teal" type="submit" isLoading={isLoading}>
             Register
           </Button>
         </Stack>
+
+        <Box textAlign="center" mt={4}>
+          <Link href="/login" display="flex" alignItems="center" color="teal.500">
+            <ChevronLeftIcon boxSize={5} mr={2} />
+            Return to Sign In
+          </Link>
+        </Box>
       </form>
     </Box>
   );

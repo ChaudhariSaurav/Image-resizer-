@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
   Input,
@@ -12,6 +12,8 @@ import {
   Link,
   IconButton,
   Icon,
+  Divider,
+  AbsoluteCenter ,
   HStack,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
@@ -66,35 +68,59 @@ const LoginPage = () => {
     }
   };
 
-  const handleProviderLogin = async (loginFunction) => {
+  const handleGoogleLogin = useCallback(() => {
     setIsLoading(true);
-    GoogleLogin();
-    try {
-      const user = await loginFunction();
-      const userName = user?.displayName || "User";
-      toast({
-        title: `Welcome, ${userName}!`,
-        description: "Login Successful",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
+    GoogleLogin()
+      .then((user) => {
+        setUser(user);
+        toast({
+          title: `Welcome, ${user.displayName || "User"}!`,
+          description: "Login Successful",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+          position: "top-center",
+        });
+        navigate("/home");
+      })
+      .catch((err) => {
+        console.error("Error in Google Login", err);
+        toast({
+          title: "Login failed",
+          description: `An error occurred during Google login. || err`,
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "top-center",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-      navigate("/welcome");
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error.message || "An error occurred during login.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [navigate, toast]);
 
   return (
-    <Box maxW="md" mx="auto" p={4}>
+    <Box
+      maxW="md"
+      mx="auto"
+      p={4}
+      borderWidth={1}
+      width="100%"
+      maxWidth="500px"
+      borderRadius="md"
+      mb={5}
+      mt={5}
+    >
+      {/* Heading and Introductory Text */}
+      <Box textAlign="center" mb={8}>
+        <Text fontSize="2xl" fontWeight="bold" mt={5}>
+          Sign in to your account
+        </Text>
+        <Text mt={2} fontSize="lg" color="gray.600">
+          Welcome Back! Please enter your details to login.
+        </Text>
+      </Box>
+
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={4}>
           <FormControl isInvalid={!!errors.email}>
@@ -124,7 +150,12 @@ const LoginPage = () => {
           </FormControl>
 
           <FormControl isInvalid={!!errors.password}>
-            <FormLabel htmlFor="password">Password</FormLabel>
+            <HStack justify="space-between">
+              <FormLabel htmlFor="password">Password</FormLabel>
+              <Link color="teal.500" href="/forgot-password">
+                Forgot Password?
+              </Link>
+            </HStack>
             <Controller
               name="password"
               control={control}
@@ -151,12 +182,6 @@ const LoginPage = () => {
           >
             Login
           </Button>
-
-          <Box textAlign="center">
-            <Link color="teal.500" href="/forgot-password">
-              Forgot Password?
-            </Link>
-          </Box>
         </Stack>
       </form>
 
@@ -169,8 +194,14 @@ const LoginPage = () => {
         </Text>
       </Box>
 
-      <Box mt={4} textAlign="center">
-        <Text mb={2}>Or sign in with:</Text>
+      <Box textAlign="center">
+      <Box position='relative' padding='10'>
+  <Divider />
+  <AbsoluteCenter bg='white' px='4'>
+  <Text>Or sign in with:</Text>
+  </AbsoluteCenter>
+</Box>
+        
         <Stack spacing={4} direction="row" justify="center">
           <IconButton
             aria-label="Sign in with Google"
@@ -181,8 +212,8 @@ const LoginPage = () => {
                 <Text>Sign in with Google</Text>
               </HStack>
             }
-            onClick={() => handleProviderLogin(GoogleLogin)}
-            colorScheme="teal"
+            onClick={handleGoogleLogin}
+            colorScheme="blue"
             variant="solid"
             w="full"
             justifyContent="flex-start"

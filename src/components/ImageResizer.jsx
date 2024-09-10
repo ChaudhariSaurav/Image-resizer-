@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -17,11 +17,15 @@ import {
   FormControl,
   FormLabel,
   Spinner,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { FaDropbox, FaGoogleDrive, FaUpload } from "react-icons/fa";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
+import { listenForUserPlan } from "../utils/firebaseUtils"; // Adjust the import according to your setup
+import { auth } from "../config/firebase"; // Ensure this import is correct
 
 const ImageResizer = () => {
   const [image, setImage] = useState(null);
@@ -31,12 +35,38 @@ const ImageResizer = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
-  const [showUrlInput, setShowUrlInput] = useState(false); // State to toggle URL input
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [resizeCount, setResizeCount] = useState(0);
+  const [resizeLimit, setResizeLimit] = useState(0);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  useEffect(() => {
+    const fetchPlanData = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const plan = await listenForUserPlan(user.uid);
+          setResizeLimit(plan.maxResizes);
+        } else {
+          throw new Error("User is not authenticated.");
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch plan information.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    };
+
+    fetchPlanData();
+  }, [toast]);
+
   const { getRootProps, getInputProps } = useDropzone({
-    accept: "image/*", // Only accept images
+    accept: "image/*",
     onDrop: (acceptedFiles) => {
       const file = acceptedFiles[0];
       setImage(URL.createObjectURL(file));
@@ -46,14 +76,25 @@ const ImageResizer = () => {
   const handleResize = async () => {
     if (!image) return;
 
+    if (resizeCount >= resizeLimit) {
+      toast({
+        title: "Resize Limit Reached",
+        description: `You have reached the limit of ${resizeLimit} resizes. Current resize count: ${resizeCount}`,
+        status: "warning",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+
     setLoading(true);
     setProgress(0);
-    setResizedImage(null); // Reset resized image before resizing
+    setResizedImage(null);
 
     try {
       const imageFile = await fetch(image).then((res) => res.blob());
       const options = {
-        maxSizeMB: desiredSize / 1024, // Convert KB to MB for the library
+        maxSizeMB: desiredSize / 1024,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
         initialQuality: compressionQuality / 100,
@@ -64,9 +105,12 @@ const ImageResizer = () => {
 
       setResizedImage(compressedUrl);
       setProgress(100);
+      setResizeCount((prev) => prev + 1);
       toast({
         title: "Image Resized",
-        description: "Your image has been resized and compressed.",
+        description: `Your image has been resized and compressed. Resize count: ${
+          resizeCount + 1
+        }`,
         status: "success",
         duration: 5000,
         isClosable: true,
@@ -115,8 +159,6 @@ const ImageResizer = () => {
   };
 
   const handleGoogleDrive = () => {
-    // Implement Google Drive file picker and OAuth
-    // For demo purposes, this will simply show a toast
     toast({
       title: "Google Drive Integration",
       description: "Google Drive integration is not yet implemented.",
@@ -130,13 +172,34 @@ const ImageResizer = () => {
     if (resizedImage) {
       const link = document.createElement("a");
       link.href = resizedImage;
-      link.download = "resized-image.jpg"; // Set file name here
+      link.download = "resized-image.jpg";
       link.click();
     }
   };
 
+  const handleReset = () => {
+    setImage(null);
+    setResizedImage(null);
+    setProgress(0);
+    setResizeCount(0);
+    toast({
+      title: "Reset",
+      description: "Image and progress have been reset.",
+      status: "info",
+      duration: 5000,
+      isClosable: true,
+    });
+  };
+
   return (
     <Box p={5}>
+      <Box mb={4}>
+        <Alert status="warning">
+          <AlertIcon />
+          Resize Limit: {resizeCount} / {resizeLimit}
+        </Alert>
+      </Box>
+
       <Box
         mb={4}
         {...getRootProps()}
@@ -204,7 +267,13 @@ const ImageResizer = () => {
       {image && !loading && !resizedImage && (
         <Box mt={4}>
           <Image src={image} boxSize="200px" objectFit="cover" />
-          <Button mt={2} colorScheme="blue" onClick={onOpen}>
+          <Button
+            mt={2}
+            colorScheme="blue"
+            w="full"
+            onClick={onOpen}
+            isDisabled={resizeCount >= resizeLimit}
+          >
             Resize Image
           </Button>
         </Box>
@@ -221,6 +290,10 @@ const ImageResizer = () => {
         </Box>
       )}
 
+      <Button mt={4} colorScheme="red" w="full" onClick={handleReset}>
+        Reset
+      </Button>
+
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
@@ -231,7 +304,7 @@ const ImageResizer = () => {
               <Input
                 type="number"
                 value={compressionQuality}
-                onChange={(e) => setCompressionQuality(e.target.value)}
+                onChange={(e) => setCompressionQuality(Number(e.target.value))}
               />
             </FormControl>
             <FormControl mt={4} id="size">
@@ -239,16 +312,16 @@ const ImageResizer = () => {
               <Input
                 type="number"
                 value={desiredSize}
-                onChange={(e) => setDesiredSize(e.target.value)}
+                onChange={(e) => setDesiredSize(Number(e.target.value))}
               />
             </FormControl>
-            <Button mt={4} colorScheme="blue" onClick={handleResize}>
-              Resize
-            </Button>
             <Progress mt={4} value={progress} />
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onClose}>
+            <Button colorScheme="blue" onClick={handleResize} isDisabled={resizeCount >= resizeLimit}>
+              Resize
+            </Button>
+            <Button colorScheme="red" onClick={onClose} ml={3}>
               Close
             </Button>
           </ModalFooter>

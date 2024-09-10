@@ -54,7 +54,7 @@ export default function ThreeTierPricing() {
           currency: "INR",
           name: "Image Resizer",
           description: plan.description,
-          image: "path_to_your_logo", // Optional: add your logo
+          image: "https://cdn.icon-icons.com/icons2/1381/PNG/512/com_94698.png", // Optional: add your logo
           handler: function (response) {
             // Function triggered on successful payment
             alert(
@@ -83,13 +83,14 @@ export default function ThreeTierPricing() {
 
   const plans = [
     {
-      title: "Hobby",
-      price: "$79/month",
-      amount: 7900,
-      description: "Hobby Plan",
+      title: "Basic Plam",
+      price: "₹0/month",
+      amount: 0,
+      description: "Free Plan",
       features: [
         "Resize images up to 1MB",
         "Basic image compression",
+        "Only 5 Image resize",
         "Basic support",
       ],
       btnText: "Start trial",
