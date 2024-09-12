@@ -12,20 +12,24 @@ import {
   Box,
   Avatar,
   Image,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
 import {
   FaHome,
   FaDollarSign,
-  FaComments,
-  FaInfoCircle,
+  FaCompress,
   FaSignInAlt,
+  FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaSignOutAlt,
-  FaCompress
 } from "react-icons/fa";
 import useDataStore from "../zustand/userDataStore";
 import { userSignOut } from "../service/auth";
+import UserSubscription from "../utils/SubscriptionPlan";
+import { MdCardMembership, MdOutlineRssFeed } from 'react-icons/md';  
 
 const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -46,16 +50,24 @@ const Navbar = () => {
     }
   };
 
-  const handleLogin = ()=>{
-    window.location.href="/login"
-  }
+  const handleLogin = () => {
+    window.location.href = "/login";
+  };
+
+  const handleRegister = () => {
+    window.location.href = "/register";
+  };
 
   const navItems = [
     { name: "Home", icon: FaHome, href: "/" },
-    { name: "Pricing", icon: FaDollarSign, href: "#pricing" },
-    { name: "Resizing", icon:FaCompress, href: "#resizing_tool" },
-    { name: "Testimonials", icon: FaComments, href: "#testimonials" },
-    { name: "Contact", href: "#contact" },
+    { name: "Recent Feedback", icon: MdOutlineRssFeed, href: "/feedback" },
+    {
+      name: "Subscription",
+      icon: MdCardMembership,
+      submenu: (
+        <UserSubscription /> // Ensure this component returns the correct submenu items
+      ),
+    },
   ];
 
   return (
@@ -74,55 +86,77 @@ const Navbar = () => {
       <Flex align="center">
         <Image
           src="https://cdn.icon-icons.com/icons2/1381/PNG/512/com_94698.png"
-          boxSize="24px" // Adjust size as needed
-          mr="2" // Space between image and text
+          boxSize="24px"
+          mr="2"
           alt="Brand Icon"
         />
-        <Heading size="lg" fontWeight="bold">
-          Image Resizer
-        </Heading>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <Heading size="lg" fontWeight="bold">
+            Image Resizer
+          </Heading>
+        </Link>
       </Flex>
+
       {/* Desktop View */}
       <HStack spacing="5" display={{ base: "none", md: "flex" }}>
         {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            _hover={{ textDecoration: "none", color: "teal.200" }}
-          >
-            <HStack>
-              {item.icon && <Icon as={item.icon} />}
-              <span>{item.name}</span>
-            </HStack>
-          </Link>
+          <React.Fragment key={item.name}>
+            {item.submenu ? (
+              <Menu>
+                <MenuButton as={Button} rightIcon={<FaCompress />}>
+                  {item.name}
+                </MenuButton>
+                <MenuList>{item.submenu}</MenuList>
+              </Menu>
+            ) : (
+              <Link href={item.href} _hover={{ textDecoration: "none", color: "teal.200" }}>
+                <HStack>
+                  {item.icon && <Icon as={item.icon} />}
+                  <span>{item.name}</span>
+                </HStack>
+              </Link>
+            )}
+          </React.Fragment>
         ))}
         {isLoggedIn ? (
-          <HStack spacing="3">
-            {avatarUrl && <Avatar src={avatarUrl} size="sm" />}
-            <VStack align="start" spacing="1">
-              <span>{user?.displayName}</span>
-              <span>{user?.email}</span>
-            </VStack>
+          <Menu>
+            <MenuButton>
+              <Avatar src={avatarUrl} size="sm" />
+            </MenuButton>
+            <MenuList>
+              {avatarUrl && (
+                <MenuItem>
+                  <Avatar src={avatarUrl} size="md" />
+                </MenuItem>
+              )}
+              <MenuItem>Name: {user?.displayName}</MenuItem>
+              <MenuItem>Email: {user?.email}</MenuItem>
+              <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
+                Logout
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        ) : (
+          <>
             <Button
               colorScheme="teal"
               variant="outline"
-              onClick={handleLogout}
-              leftIcon={<FaSignOutAlt />}
-              ml="4"
+              onClick={handleLogin}
+              leftIcon={<FaSignInAlt />}
             >
-              Logout
+              Login
             </Button>
-          </HStack>
-        ) : (
-          <Button
-            colorScheme="teal"
-            variant="outline"
-            leftIcon={<FaSignInAlt />}
-          >
-            Login
-          </Button>
+            <Button
+              colorScheme="teal"
+              variant="solid"
+              onClick={handleRegister}
+            >
+              Register
+            </Button>
+          </>
         )}
       </HStack>
+
       {/* Mobile View */}
       <IconButton
         aria-label="Open Menu"
@@ -135,53 +169,76 @@ const Navbar = () => {
           position="fixed"
           top="60px"
           left="0"
-          width="100%"
+          width="100%" // Full width
           p="6"
           bg="white"
           zIndex="1000"
           borderBottom="1px solid #e2e8f0"
         >
-          <VStack spacing="5" align="start">
+          <VStack spacing="5" align="stretch"> {/* Align items to stretch full width */}
             {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={onClose}
-                _hover={{ textDecoration: "none", color: "teal.200" }}
-              >
-                <HStack>
-                  {item.icon && <Icon as={item.icon} />}
-                  <span>{item.name}</span>
-                </HStack>
-              </Link>
+              <React.Fragment key={item.name}>
+                {item.submenu ? (
+                  <Menu>
+                    <MenuButton as={Button} rightIcon={<FaCompress />} width="full"> {/* Full width */}
+                      {item.name}
+                    </MenuButton>
+                    <MenuList>{item.submenu}</MenuList>
+                  </Menu>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={onClose}
+                    _hover={{ textDecoration: "none", color: "teal.200" }}
+                  >
+                    <HStack width="full" spacing="4">
+                      {item.icon && <Icon as={item.icon} />}
+                      <span>{item.name}</span>
+                    </HStack>
+                  </Link>
+                )}
+              </React.Fragment>
             ))}
             {isLoggedIn ? (
-              <VStack spacing="4" align="start">
-                <HStack spacing="3" align="center">
-                  {avatarUrl && <Avatar src={avatarUrl} size="sm" />}
-                  <VStack align="start" spacing="1">
-                    <span>{user?.displayName}</span>
-                    <span>{user?.email}</span>
-                  </VStack>
-                </HStack>
+              <VStack spacing="4" align="stretch"> {/* Full width */}
+                <Menu>
+                  <MenuButton width="full"> {/* Full width */}
+                    <Avatar src={avatarUrl} size="sm" />
+                  </MenuButton>
+                  <MenuList>
+                    {avatarUrl && (
+                      <MenuItem>
+                        <Avatar src={avatarUrl} size="md" />
+                      </MenuItem>
+                    )}
+                    <MenuItem>Name: {user?.displayName}</MenuItem>
+                    <MenuItem>Email: {user?.email}</MenuItem>
+                    <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
+                      Logout
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+              </VStack>
+            ) : (
+              <VStack spacing="4" align="stretch"> {/* Full width */}
                 <Button
                   colorScheme="teal"
                   variant="outline"
-                  onClick={handleLogout}
-                  leftIcon={<FaSignOutAlt />}
+                  onClick={handleLogin}
+                  leftIcon={<FaSignInAlt />}
+                  w={'100%'}
                 >
-                  Logout
+                  Login
+                </Button>
+                <Button
+                  colorScheme="teal"
+                  variant="solid"
+                  onClick={handleRegister}
+                  w={'100%'}
+                >
+                  Register
                 </Button>
               </VStack>
-            ) : (
-              <Button
-                colorScheme="teal"
-                variant="outline"
-                onClick={handleLogin}
-                leftIcon={<FaSignInAlt />}
-              >
-                Login
-              </Button>
             )}
           </VStack>
         </Box>

@@ -7,7 +7,6 @@ import { InvalidLoginRoutes } from "./invalidRoute";
 
 function UserRoute() {
   const user = useDataStore((state) => state.user);
-  console.log({ user })
 
   return (
     <BrowserRouter>

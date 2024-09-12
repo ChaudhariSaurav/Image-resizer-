@@ -13,12 +13,13 @@ import {
   IconButton,
   Icon,
   Divider,
-  AbsoluteCenter ,
+  AbsoluteCenter,
   HStack,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { userLogin, GoogleLogin } from "../service/auth";
 import { FaGoogle } from "react-icons/fa";
+import useDataStore from "../zustand/userDataStore";
 
 const LoginPage = () => {
   const {
@@ -28,14 +29,36 @@ const LoginPage = () => {
   } = useForm();
   const toast = useToast();
   const navigate = useNavigate();
+  const setUser = useDataStore((state) => state.setUser);
+
   const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleError = (error) => {
+    let errorMessage = "An unexpected error occurred";
+    if (error?.response?.data?.error?.message) {
+      errorMessage = error.response.data.error.message;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    }
+
+    toast({
+      title: "Login failed",
+      description: errorMessage,
+      status: "error",
+      duration: 5000,
+      isClosable: true,
+      position: "top-center",
+    });
+  };
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
       const { email, password } = data;
       const result = await userLogin(email, password);
+
       if (typeof result === "string") {
+        // Backend returned a string error
         toast({
           title: "Login Error",
           description: result,
@@ -44,6 +67,7 @@ const LoginPage = () => {
           isClosable: true,
         });
       } else {
+        // Assuming result contains user info
         const userName = result.user?.displayName || "User";
         toast({
           title: `Welcome, ${userName}!`,
@@ -56,13 +80,7 @@ const LoginPage = () => {
         navigate("/welcome");
       }
     } catch (error) {
-      toast({
-        title: "An error occurred",
-        description: "Something went wrong during login.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+      handleError(error);
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +90,6 @@ const LoginPage = () => {
     setIsLoading(true);
     GoogleLogin()
       .then((user) => {
-        setUser(user);
         toast({
           title: `Welcome, ${user.displayName || "User"}!`,
           description: "Login Successful",
@@ -81,18 +98,12 @@ const LoginPage = () => {
           isClosable: true,
           position: "top-center",
         });
-        navigate("/home");
+        setUser(user);
+        navigate("/welcome");
       })
-      .catch((err) => {
-        console.error("Error in Google Login", err);
-        toast({
-          title: "Login failed",
-          description: `An error occurred during Google login. || err`,
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-          position: "top-center",
-        });
+      .catch((error) => {
+        console.error("Error in Google Login", error);
+        handleError(error);
       })
       .finally(() => {
         setIsLoading(false);
@@ -116,8 +127,19 @@ const LoginPage = () => {
         <Text fontSize="2xl" fontWeight="bold" mt={5}>
           Sign in to your account
         </Text>
-        <Text mt={2} fontSize="lg" color="gray.600">
-          Welcome Back! Please enter your details to login.
+        {/* Styled message */}
+        <Text
+          mb={6}
+          bg="#fff2f0"
+          border="1px"
+          borderColor="#000"
+          p={2}
+          mt={5}
+          borderRadius="md"
+          textAlign="left"
+          fontSize="sm"
+        >
+          Welcome Back! Please enter your details to login..
         </Text>
       </Box>
 
@@ -195,13 +217,13 @@ const LoginPage = () => {
       </Box>
 
       <Box textAlign="center">
-      <Box position='relative' padding='10'>
-  <Divider />
-  <AbsoluteCenter bg='white' px='4'>
-  <Text>Or sign in with:</Text>
-  </AbsoluteCenter>
-</Box>
-        
+        <Box position='relative' padding='10'>
+          <Divider />
+          <AbsoluteCenter bg='white' px='4'>
+            <Text>Or sign in with:</Text>
+          </AbsoluteCenter>
+        </Box>
+
         <Stack spacing={4} direction="row" justify="center">
           <IconButton
             aria-label="Sign in with Google"

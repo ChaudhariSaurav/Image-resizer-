@@ -41,29 +41,29 @@ const ImageResizer = () => {
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  useEffect(() => {
-    const fetchPlanData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const plan = await listenForUserPlan(user.uid);
-          setResizeLimit(plan.maxResizes);
-        } else {
-          throw new Error("User is not authenticated.");
-        }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch plan information.",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    };
+  // useEffect(() => {
+  //   const fetchPlanData = async () => {
+  //     try {
+  //       const user = auth.currentUser;
+  //       if (user) {
+  //         const plan = await listenForUserPlan(user.uid);
+  //         setResizeLimit(plan.maxResizes);
+  //       } else {
+  //         throw new Error("User is not authenticated.");
+  //       }
+  //     } catch (error) {
+  //       toast({
+  //         title: "Error",
+  //         description: "Failed to fetch plan information.",
+  //         status: "error",
+  //         duration: 5000,
+  //         isClosable: true,
+  //       });
+  //     }
+  //   };
 
-    fetchPlanData();
-  }, [toast]);
+  //   fetchPlanData();
+  // }, [toast]);
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: "image/*",
@@ -192,7 +192,12 @@ const ImageResizer = () => {
   };
 
   return (
-    <Box p={5}>
+    <Box
+      p={5}
+      bgImage="url('https://formspree.io/img/watermark.svg')"
+      bgSize="cover"
+      bgPosition="center"
+    >
       <Box mb={4}>
         <Alert status="warning">
           <AlertIcon />
@@ -318,7 +323,11 @@ const ImageResizer = () => {
             <Progress mt={4} value={progress} />
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" onClick={handleResize} isDisabled={resizeCount >= resizeLimit}>
+            <Button
+              colorScheme="blue"
+              onClick={handleResize}
+              isDisabled={resizeCount >= resizeLimit}
+            >
               Resize
             </Button>
             <Button colorScheme="red" onClick={onClose} ml={3}>

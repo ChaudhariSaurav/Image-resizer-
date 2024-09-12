@@ -1,8 +1,16 @@
 /* Add this to your global CSS file or the main component's CSS module */
+@import url('https://fonts.googleapis.com/css2?family=Inria+Sans:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+
+*{
+  font-family: "Inria Sans", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
 body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+
 }
 
 .main-content {

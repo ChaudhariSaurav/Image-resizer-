@@ -22,7 +22,16 @@ const RegisterPage = () => {
     formState: { errors },
     watch,
     reset,
-  } = useForm();
+  } = useForm({
+    defaultValues: {
+      name: "",
+      email: "",
+      mobileNo: "",
+      password: "",
+      confirmPassword: "",
+      dob: "",
+    },
+  });
   const toast = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [profileImage, setProfileImage] = React.useState(null);
@@ -34,6 +43,7 @@ const RegisterPage = () => {
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
     accept: 'image/*',
+    maxFiles: 1, // Ensure only one file is accepted
   });
 
   const onSubmit = async (data) => {
@@ -45,6 +55,7 @@ const RegisterPage = () => {
         throw new Error("Please upload a profile image.");
       }
 
+      // Register the user
       await registerUser(
         email,
         password,
@@ -54,13 +65,13 @@ const RegisterPage = () => {
         profileImage
       );
 
-      // Reset form fields
+      // Reset form fields and profile image
       reset();
       setProfileImage(null);
 
       toast({
         title: "Registration Successful",
-        description: "Welcome!",
+        description: "Welcome! You have successfully registered your account.",
         status: "success",
         duration: 5000,
         isClosable: true,
@@ -235,6 +246,8 @@ const RegisterPage = () => {
               borderRadius="md"
               borderStyle="dashed"
               {...getRootProps()}
+              cursor="pointer"
+              textAlign="center"
             >
               <input {...getInputProps()} />
               {profileImage ? (
