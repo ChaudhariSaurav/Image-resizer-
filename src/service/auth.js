@@ -6,7 +6,7 @@ import {
   updateProfile,
   GoogleAuthProvider
 } from "firebase/auth";
-import { ref, set, get, update, getDatabase } from "firebase/database";
+import { ref, set, get, update, push, getDatabase } from "firebase/database";
 import {
   ref as storageRef,
   uploadBytes,
@@ -29,20 +29,13 @@ const registerUser = async (
   name,
   dob,
   mobile,
-  profileImage,
+  profileImage
 ) => {
   try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     const uid = user.uid;
-    const profileImageRef = storageRef(
-      storage,
-      `profileImages/${user.uid}/${profileImage.name}`,
-    );
+    const profileImageRef = storageRef(storage, `profileImages/${user.uid}/${profileImage.name}`);
     await uploadBytes(profileImageRef, profileImage);
     const profileImageURL = await getDownloadURL(profileImageRef);
 
@@ -68,7 +61,8 @@ const registerUser = async (
         amount: 0,
         paymentId: null,
         date: null,
-      }, // Initialize subscription
+        history: [], // Initialize subscription history
+      },
       resizeCount: 0, // Initialize resize count
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -81,34 +75,10 @@ const registerUser = async (
   }
 };
 
-const updateResizeCount = async (userId) => {
-  try {
-    const userRef = ref(database, `users/${userId}`);
-    const snapshot = await get(userRef);
-    const userData = snapshot.val();
-
-    if (userData) {
-      const currentCount = userData.resizeCount || 0;
-      const newCount = currentCount + 1;
-
-      await update(userRef, { resizeCount: newCount });
-    } else {
-      console.error("User data not found");
-    }
-  } catch (error) {
-    console.error("Error updating resize count:", error);
-    throw new Error("An error occurred while updating resize count.");
-  }
-};
-
 // Login user with email and password
 const userLogin = async (email, password) => {
   try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     useDataStore.getState().setUser(user);
     window.location.replace("/welcome");
@@ -144,12 +114,10 @@ const GoogleLogin = () => {
   return new Promise((resolve, reject) => {
     signInWithPopup(auth, googleProvider)
       .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
         const credential = GoogleAuthProvider.credentialFromResult(result);
         if (credential) {
           const user = result.user;
           const db = getDatabase();
-
           const userRef = ref(database, `users/${user.uid}`);
           get(userRef).then((snapshot) => {
             if (!snapshot.exists()) {
@@ -159,31 +127,30 @@ const GoogleLogin = () => {
                 isPhoneNumberVisible: true,
                 isProfileImageVisible: true,
                 phone: user.phoneNumber,
-                profileImageUrl: user.photoURL,
-                uid,
-
-                mobile,
-                dob,
-                password,
-                profileImageURL,
-                plan: "Free Plan", // Default plan
+                profileImageURL: user.photoURL,
+                uid: user.uid,
+                mobile: null,
+                dob: null,
+                password: null,
+                profileImageURL: user.photoURL,
+                plan: "Free Plan",
                 subscription: {
                   plan: "Free Plan",
                   amount: 0,
                   paymentId: null,
                   date: null,
-                }, // Initialize subscription
-                resizeCount: 0, // Initialize resize count
+                  history: [], // Initialize with empty history
+                },
+                resizeCount: 0,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               });
             }
           });
-          resolve(user)
+          resolve(user);
+        } else {
+          reject("Something Went Wrong");
         }
-        reject("Something Went Wrong");
-        // toast.success({ credential });
-        // return credential
       })
       .catch((error) => {
         const errorMessage = error.message;
@@ -216,8 +183,9 @@ const updateUserProfile = async (user) => {
           amount: 0,
           paymentId: null,
           date: null,
-        }, // Initialize subscription
-        resizeCount: 0, // Initialize resize count
+          history: [], // Initialize with empty history
+        },
+        resizeCount: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -227,6 +195,8 @@ const updateUserProfile = async (user) => {
     throw new Error("An error occurred while updating user profile.");
   }
 };
+
+
 
 // Sign out user
 const userSignOut = async () => {
@@ -248,5 +218,4 @@ export {
   GitHubLogin,
   DiscordLogin,
   registerUser,
-  updateResizeCount
 };

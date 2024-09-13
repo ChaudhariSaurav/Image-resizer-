@@ -19,28 +19,64 @@ import {
 } from "@chakra-ui/react";
 import {
   FaHome,
-  FaDollarSign,
   FaCompress,
   FaSignInAlt,
   FaSignOutAlt,
   FaBars,
   FaTimes,
+  FaBoxOpen
 } from "react-icons/fa";
+import { AiOutlineTransaction } from "react-icons/ai";
+import { MdOutlineFeedback, MdNotifications } from "react-icons/md";
 import useDataStore from "../zustand/userDataStore";
 import { userSignOut } from "../service/auth";
 import UserSubscription from "../utils/SubscriptionPlan";
-import { MdCardMembership, MdOutlineRssFeed } from 'react-icons/md';  
+import { MdOutlineRssFeed } from 'react-icons/md';
+import { BsFiletypePdf } from "react-icons/bs";
+import { database } from "../config/firebase";
+import { ref } from "firebase/database";
 
 const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { isLoggedIn, user } = useDataStore();
   const [avatarUrl, setAvatarUrl] = useState(user?.photoURL || null);
+  const [name, setName] = useState('');
+
+
+  const fetchUserData = async (uid) => {
+    try {
+      const userRef = ref(database, `users/${uid}`);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        return data.name || ''; // Return only the name property
+      } else {
+        console.log("No user data available");
+        return ''; // Return an empty string if no name is available
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      return ''; // Return an empty string in case of error
+    }
+  };
+  
+
 
   useEffect(() => {
-    if (user && user.photoURL) {
-      setAvatarUrl(user.photoURL);
+    if (user) {
+      if (user.photoURL) {
+        setAvatarUrl(user.photoURL);
+      }
+  
+      const userId = user?.id;
+      if (userId) {
+        fetchUserData(userId).then(userName => {
+          setName(userName?.name); // Set only the name
+        });
+      }
     }
   }, [user]);
+  
 
   const handleLogout = async () => {
     try {
@@ -58,18 +94,24 @@ const Navbar = () => {
     window.location.href = "/register";
   };
 
-  const navItems = [
-    { name: "Home", icon: FaHome, href: "/" },
-    { name: "Recent Feedback", icon: MdOutlineRssFeed, href: "/feedback" },
-    {
-      name: "Subscription",
-      icon: MdCardMembership,
-      submenu: (
-        <UserSubscription /> // Ensure this component returns the correct submenu items
-      ),
-    },
-  ];
+  // Define navItems based on login state
+  const navItems = isLoggedIn
+    ? [
+        { name: "Home", icon: FaHome, href: "/" },
+        { name: "Pdf", icon: BsFiletypePdf, href: "/pdf-resize" },
+        { name: "Feedback", icon: MdOutlineFeedback, href: "/feedback" },
+        { name: "Transaction", icon: AiOutlineTransaction, href: "/transaction-history" },
+        {
+          name: "Subscription",
+          icon: FaBoxOpen,
+          submenu: <UserSubscription /> // Ensure this component returns the correct submenu items
+        },
+      ]
+    : [
+        { name: "Home", icon: FaHome, href: "/" },
+      ];
 
+     
   return (
     <Flex
       as="nav"
@@ -129,8 +171,11 @@ const Navbar = () => {
                   <Avatar src={avatarUrl} size="md" />
                 </MenuItem>
               )}
-              <MenuItem>Name: {user?.displayName}</MenuItem>
-              <MenuItem>Email: {user?.email}</MenuItem>
+              <MenuItem>{name}</MenuItem>
+              <MenuItem>{user?.email}</MenuItem>
+              <Link href="/profile">
+                <MenuItem icon={<MdOutlineRssFeed />}>Profile</MenuItem>
+              </Link>
               <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
                 Logout
               </MenuItem>
@@ -169,18 +214,18 @@ const Navbar = () => {
           position="fixed"
           top="60px"
           left="0"
-          width="100%" // Full width
+          width="100%"
           p="6"
           bg="white"
           zIndex="1000"
           borderBottom="1px solid #e2e8f0"
         >
-          <VStack spacing="5" align="stretch"> {/* Align items to stretch full width */}
+          <VStack spacing="5" align="stretch">
             {navItems.map((item) => (
               <React.Fragment key={item.name}>
                 {item.submenu ? (
                   <Menu>
-                    <MenuButton as={Button} rightIcon={<FaCompress />} width="full"> {/* Full width */}
+                    <MenuButton as={Button} rightIcon={<FaCompress />} width="full">
                       {item.name}
                     </MenuButton>
                     <MenuList>{item.submenu}</MenuList>
@@ -200,9 +245,9 @@ const Navbar = () => {
               </React.Fragment>
             ))}
             {isLoggedIn ? (
-              <VStack spacing="4" align="stretch"> {/* Full width */}
+              <VStack spacing="4" align="stretch">
                 <Menu>
-                  <MenuButton width="full"> {/* Full width */}
+                  <MenuButton width="full">
                     <Avatar src={avatarUrl} size="sm" />
                   </MenuButton>
                   <MenuList>
@@ -211,8 +256,11 @@ const Navbar = () => {
                         <Avatar src={avatarUrl} size="md" />
                       </MenuItem>
                     )}
-                    <MenuItem>Name: {user?.displayName}</MenuItem>
+                    <MenuItem>Name: {name}</MenuItem>
                     <MenuItem>Email: {user?.email}</MenuItem>
+                    <Link href="/profile">
+                      <MenuItem icon={<MdOutlineRssFeed />}>Profile</MenuItem>
+                    </Link>
                     <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
                       Logout
                     </MenuItem>
@@ -220,13 +268,13 @@ const Navbar = () => {
                 </Menu>
               </VStack>
             ) : (
-              <VStack spacing="4" align="stretch"> {/* Full width */}
+              <VStack spacing="4" align="stretch">
                 <Button
                   colorScheme="teal"
                   variant="outline"
                   onClick={handleLogin}
                   leftIcon={<FaSignInAlt />}
-                  w={'100%'}
+                  w="full"
                 >
                   Login
                 </Button>
@@ -234,7 +282,7 @@ const Navbar = () => {
                   colorScheme="teal"
                   variant="solid"
                   onClick={handleRegister}
-                  w={'100%'}
+                  w="full"
                 >
                   Register
                 </Button>

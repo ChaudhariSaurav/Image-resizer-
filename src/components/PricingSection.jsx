@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Box,
   Stack,
-  HStack,
   Heading,
   Text,
   VStack,
@@ -12,11 +11,13 @@ import {
   ListIcon,
   Button,
   useToast,
+  Spinner,
 } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
-import { ref, set, onValue, update } from "firebase/database";
+import { ref, set, onValue, push, update } from "firebase/database";
 import { database } from '../config/firebase';
 import useDataStore from '../zustand/userDataStore';
+import { nanoid } from 'nanoid';
 
 // PriceWrapper Component
 function PriceWrapper({ children, isActive }) {
@@ -35,6 +36,27 @@ function PriceWrapper({ children, isActive }) {
   );
 }
 
+// Add a subscription history record
+const addSubscriptionHistory = async (userId, transactionId, razorpayId, datetime) => {
+  try {
+    if (!userId) throw new Error("User ID is required");
+
+    const historyRecord = {
+      transactionId: transactionId || nanoid(), // Use nanoid for unique transaction ID
+      razorpayId: razorpayId || null,
+      datetime: datetime || new Date().toISOString(),
+      
+    };
+
+    const historyRef = ref(database, `users/${userId}/subscription/history`);
+    await push(historyRef, historyRecord); // Use push() to create a new entry with a unique key
+  } catch (error) {
+    console.error("Error updating subscription history:", error);
+    throw new Error("An error occurred while updating subscription history.");
+  }
+};
+
+
 // Main Component
 export default function ThreeTierPricing() {
   const toast = useToast();
@@ -43,6 +65,7 @@ export default function ThreeTierPricing() {
   const [activePlan, setActivePlan] = useState(null); // State to track active plan
   const [subscriptionExpiry, setSubscriptionExpiry] = useState(null); // State to track subscription expiry
   const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null); // Error state
 
   useEffect(() => {
     if (UserId) {
@@ -68,12 +91,12 @@ export default function ThreeTierPricing() {
         document.body.appendChild(script);
       });
     };
-
+  
     const initiatePayment = async () => {
       try {
         setLoading(true);
         await loadScript("https://checkout.razorpay.com/v1/checkout.js");
-
+  
         const options = {
           key: "rzp_test_OWxWTbj8UnSC1W",
           amount: plan.amount * 100,
@@ -81,20 +104,32 @@ export default function ThreeTierPricing() {
           name: "Image Resizer",
           description: plan.description,
           image: "https://cdn.icon-icons.com/icons2/1381/PNG/512/com_94698.png",
-          handler: function (response) {
+          handler: async function (response) {
             if (UserId) {
-              const trialDays = plan.title === "Basic Plan" ? 7 : plan.title === "Growth Plan" ? 30 : 365;
-              const expiryDate = new Date();
-              expiryDate.setDate(expiryDate.getDate() + trialDays);
-
-              const subscriptionRef = ref(database, `users/${UserId}/subscription`);
-              set(subscriptionRef, {
-                plan: plan.title,
-                amount: plan.amount,
-                paymentId: response.razorpay_payment_id,
-                date: new Date().toISOString(),
-                expiryDate: expiryDate.toISOString(),
-              }).then(() => {
+              try {
+                const trialDays = plan.title === "Basic Plan" ? 7 : plan.title === "Growth Plan" ? 30 : 365;
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + trialDays);
+  
+                // Update subscription data
+                const subscriptionRef = ref(database, `users/${UserId}/subscription`);
+                await update(subscriptionRef, { // Use update() to preserve other fields
+                  plan: plan.title,
+                  amount: plan.amount,
+                  paymentId: response.razorpay_payment_id,
+                  date: new Date().toISOString(),
+                  expiryDate: expiryDate.toISOString(),
+                });
+  
+                // Add to subscription history
+                await addSubscriptionHistory(
+                  UserId,
+                  nanoid(), // Generate unique transaction ID
+                  response.razorpay_payment_id,
+                  new Date().toISOString()
+                );
+  
+                // Update state and show success message
                 setActivePlan(plan.title);
                 setSubscriptionExpiry(expiryDate);
                 toast({
@@ -104,16 +139,16 @@ export default function ThreeTierPricing() {
                   duration: 9000,
                   isClosable: true,
                 });
-              }).catch((error) => {
+              } catch (error) {
                 console.error("Error updating Firebase:", error);
                 toast({
                   title: "Payment successful but failed to update subscription.",
-                  description: "Please contact support.",
+                  description: `Error: ${error.message}`,
                   status: "error",
                   duration: 9000,
                   isClosable: true,
                 });
-              });
+              }
             } else {
               toast({
                 title: "User not authenticated.",
@@ -133,7 +168,7 @@ export default function ThreeTierPricing() {
             color: "#3399cc",
           },
         };
-
+  
         const paymentObject = new window.Razorpay(options);
         paymentObject.open();
       } catch (error) {
@@ -148,9 +183,11 @@ export default function ThreeTierPricing() {
         setLoading(false);
       }
     };
-
+  
     initiatePayment();
   }, [UserId, toast]);
+  
+  
 
   const plans = [
     {
@@ -206,88 +243,80 @@ export default function ThreeTierPricing() {
           Start with a 14-day free trial. No credit card needed. Cancel at any time.
         </Text>
       </VStack>
-      <Stack
-        direction={{ base: "column", md: "row" }}
-        textAlign="center"
-        justify="center"
-        spacing={{ base: 4, lg: 10 }}
-        py={10}
-      >
-        {plans.map((plan, index) => {
-          const isActive = activePlan === plan.title && new Date() < subscriptionExpiry;
-          return (
-            <PriceWrapper
-              key={index}
-              isActive={isActive} // Highlight active plan
-            >
-              <Box position="relative">
-                {plan.isPopular && (
-                  <Box
-                    position="absolute"
-                    top="-16px"
-                    left="50%"
-                    style={{ transform: "translate(-50%)" }}
-                  >
-                    <Text
-                      textTransform="uppercase"
-                      bg={useColorModeValue("red.300", "red.700")}
-                      px={3}
-                      py={1}
-                      color={useColorModeValue("gray.900", "gray.300")}
-                      fontSize="sm"
-                      fontWeight="600"
-                      rounded="xl"
+      {loading ? (
+        <VStack spacing={4} py={10}>
+          <Spinner size="xl" />
+          <Text>Processing your payment...</Text>
+        </VStack>
+      ) : error ? (
+        <VStack spacing={4} py={10}>
+          <Text color="red.500">Error: {error}</Text>
+        </VStack>
+      ) : (
+        <Stack
+          direction={{ base: "column", md: "row" }}
+          textAlign="center"
+          justify="center"
+          spacing={{ base: 4, lg: 10 }}
+          py={10}
+        >
+          {plans.map((plan, index) => {
+            const isActive = activePlan === plan.title && new Date() < subscriptionExpiry;
+            return (
+              <PriceWrapper
+                key={index}
+                isActive={isActive} // Highlight active plan
+              >
+                <Box position="relative">
+                  {plan.isPopular && (
+                    <Box
+                      position="absolute"
+                      top="-16px"
+                      left="50%"
+                      style={{ transform: "translate(-50%)" }}
                     >
-                      Most Popular
+                      <Text
+                        textTransform="uppercase"
+                        bg={useColorModeValue("red.300", "red.700")}
+                        px={3}
+                        py={1}
+                        color={useColorModeValue("gray.900", "white")}
+                        fontSize="sm"
+                        fontWeight="bold"
+                        borderRadius="full"
+                      >
+                        Popular
+                      </Text>
+                    </Box>
+                  )}
+                  <VStack py={8} px={6} spacing={6} align="start">
+                    <Heading fontSize="xl" fontWeight="bold">
+                      {plan.title}
+                    </Heading>
+                    <Text fontSize="2xl" fontWeight="bold">
+                      {plan.price}
                     </Text>
-                  </Box>
-                )}
-                <Box py={4} px={12}>
-                  <Text fontWeight="500" fontSize="2xl">
-                    {plan.title}
-                  </Text>
-                  <HStack justifyContent="center">
-                    <Text fontSize="3xl" fontWeight="600">
-                      ₹
-                    </Text>
-                    <Text fontSize="5xl" fontWeight="900">
-                      {plan.amount}
-                    </Text>
-                    <Text fontSize="3xl" color="gray.500">
-                      /month
-                    </Text>
-                  </HStack>
-                </Box>
-                <VStack
-                  bg={useColorModeValue("gray.50", "gray.700")}
-                  py={4}
-                  borderBottomRadius={"xl"}
-                >
-                  <List spacing={3} textAlign="start" px={12}>
-                    {plan.features.map((feature, idx) => (
-                      <ListItem key={idx}>
-                        <ListIcon as={FaCheckCircle} color="green.500" />
-                        {feature}
-                      </ListItem>
-                    ))}
-                  </List>
-                  <Box w="80%" pt={7}>
+                    <List spacing={3}>
+                      {plan.features.map((feature, idx) => (
+                        <ListItem key={idx}>
+                          <ListIcon as={FaCheckCircle} color="teal.500" />
+                          {feature}
+                        </ListItem>
+                      ))}
+                    </List>
                     <Button
-                      w="full"
-                      colorScheme="red"
-                      variant={plan.isPopular ? "solid" : "outline"}
+                      colorScheme="blue"
                       onClick={() => handlePayment(plan)}
-                      isDisabled={isActive || loading}
                     >
-                      {loading ? "Processing..." : isActive ? "Active Now" : plan.btnText}
+                      {plan.btnText}
                     </Button>
-                  </Box>
-                </VStack>
-              </Box>
-            </PriceWrapper>
-          );
-        })}
-      </Stack>
+                  </VStack>
+                </Box>
+              </PriceWrapper>
+            );
+          })}
+        </Stack>
+      )}
     </Box>
   );
 }
