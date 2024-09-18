@@ -39,7 +39,8 @@ const TestimonialsSection = () => (
 );
 
 const TestimonialCard = ({ text, author, icon }) => (
-  <Box p="8" bg="gray.50" shadow="md" borderRadius="lg" maxW="sm" mx="auto"  transition="all 0.3s"
+  <Box p="8" bg="gray.50" shadow="md" borderRadius="lg" maxW="sm" mx="auto" 
+   transition="all 0.3s"
   _hover={{
     shadow: "xl",
     borderColor: "blue.400",

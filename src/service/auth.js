@@ -202,14 +202,22 @@ const updateUserProfile = async (user) => {
 const userSignOut = async () => {
   try {
     await signOut(auth);
+    
+    // Remove all relevant items from local storage
     localStorage.removeItem("UserData Storage");
     localStorage.removeItem("isLoggedIn");
-    window.location.replace("/");
+    localStorage.removeItem("user-storage");
+    localStorage.removeItem("session");
+    localStorage.removeItem("cookiesConsent");
+    // Redirect to the home page
+    window.location.replace("/"); // Redirecting should suffice
   } catch (error) {
     console.error("Error during sign out:", error);
     throw new Error("An error occurred during sign out. Please try again.");
   }
 };
+
+
 
 export {
   userLogin,

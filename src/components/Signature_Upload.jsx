@@ -20,6 +20,7 @@ import {
   SliderFilledTrack,
   SliderThumb,
   IconButton,
+  Input,
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
 import { FaUpload, FaEllipsisV } from "react-icons/fa";
@@ -32,19 +33,21 @@ const SignatureUpload = () => {
   const [signature, setSignature] = useState(null);
   const [loading, setLoading] = useState(false);
   const [signatureSizeError, setSignatureSizeError] = useState(false);
-  const [compressionValue, setCompressionValue] = useState(50);
+  const [compressionValue, setCompressionValue] = useState(100); // Default compression quality
+  const [maxSize, setMaxSize] = useState(50); // Default max size in KB
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [width, setWidth] = useState(1920); // Default width in pixels
+  const [height, setHeight] = useState(100); // Default height in pixels
+  const [dpi, setDpi] = useState(200); // Default DPI
   const [signatureCount, setSignatureCount] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0); // Time left for reset
   const toast = useToast();
   const [toastVisible, setToastVisible] = useState(false); // Track toast visibility
 
-  // Load signature count and timestamp from local storage
   useEffect(() => {
     const count = parseInt(localStorage.getItem("signatureCount")) || 0;
     const timestamp = parseInt(localStorage.getItem("signatureTimestamp")) || 0;
 
-    // Check if RESET_TIME has passed
     if (Date.now() - timestamp > RESET_TIME) {
       resetSignatureCount();
     } else {
@@ -76,7 +79,7 @@ const SignatureUpload = () => {
         isClosable: true,
       });
       setToastVisible(true);
-      setTimeout(() => setToastVisible(false), 5000); // Reset visibility after duration
+      setTimeout(() => setToastVisible(false), 5000);
     }
   };
 
@@ -106,8 +109,9 @@ const SignatureUpload = () => {
 
       if (file) {
         const options = {
-          maxSizeMB: compressionValue / 100,
-          maxWidthOrHeight: 150,
+          maxSizeMB: maxSize / 1024, // Convert KB to MB
+          maxWidthOrHeight: Math.max(width, height),
+          initialQuality: compressionValue / 100,
           useWebWorker: true,
         };
 
@@ -154,17 +158,17 @@ const SignatureUpload = () => {
   return (
     <Box p={5} maxW={{ base: "100%", md: "100%" }} mx="auto">
       {signatureCount >= MAX_SIGNATURES && (
-        <Alert status="warning" mb={4}>
-          <AlertIcon />
-          You have reached the maximum of {MAX_SIGNATURES} signature resizes
-          today.
-          {timeLeft > 0 && (
-            <Text ml={2}>
-              Reset in {Math.floor(timeLeft / 60000)}m{" "}
-              {Math.floor((timeLeft % 60000) / 1000)}s
-            </Text>
-          )}
-        </Alert>
+       <Alert status="warning" mb={4}>
+       <AlertIcon />
+       You have reached the maximum of {MAX_SIGNATURES} signature resizes today.
+       {timeLeft > 0 && (
+         <Text ml={2}>
+           Reset in {Math.floor(timeLeft / 3600000)}h{" "} {/* Convert milliseconds to hours */}
+           {Math.floor((timeLeft % 3600000) / 60000)}m{" "} {/* Remaining minutes */}
+           {Math.floor((timeLeft % 60000) / 1000)}s {/* Remaining seconds */}
+         </Text>
+       )}
+     </Alert>
       )}
 
       {signatureSizeError && (
@@ -174,12 +178,11 @@ const SignatureUpload = () => {
         </Alert>
       )}
 
-<Alert status="success" mb={4}   borderColor={"blue.400"} borderWidth= {'1px'}>
+      <Alert status="success" mb={4} borderColor={"blue.400"} borderWidth={"1px"}>
         <AlertIcon />
         You have a daily limit of 10 signature resizes. If you need more, feel
         free to reach out for options!.
       </Alert>
-
 
       <Box mb={4} position="relative">
         <IconButton
@@ -217,12 +220,11 @@ const SignatureUpload = () => {
 
       {loading && <Progress size="xs" isIndeterminate mt={4} />}
 
-
       {signature && !loading && (
         <Box mt={4}>
           <Image
             src={signature}
-            boxSize={{ base: "100%", md: "150px" }} // Responsive size
+            boxSize={{ base: "100%", md: "150px" }}
             objectFit="contain"
             border="1px solid gray"
             borderRadius="md"
@@ -245,9 +247,9 @@ const SignatureUpload = () => {
           <ModalHeader>Adjust Signature Settings</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Text mb={4}>Select the desired compression size (KB):</Text>
+            <Text mb={4}>Select the desired compression quality (%):</Text>
             <Slider
-              defaultValue={50}
+              defaultValue={compressionValue}
               min={20}
               max={100}
               onChange={(val) => setCompressionValue(val)}
@@ -257,7 +259,45 @@ const SignatureUpload = () => {
               </SliderTrack>
               <SliderThumb />
             </Slider>
-            <Text>Current Value: {compressionValue} KB</Text>
+            <Text>Current Value: {compressionValue}%</Text>
+
+            <Text mt={4} mb={2}>Set the maximum signature size (KB):</Text>
+            <Slider
+              defaultValue={maxSize}
+              min={0}
+              max={100}
+              onChange={(val) => setMaxSize(val)}
+            >
+              <SliderTrack>
+                <SliderFilledTrack />
+              </SliderTrack>
+              <SliderThumb />
+            </Slider>
+            <Text>Current Maximum Size: {maxSize} KB</Text>
+
+            <Text mt={4} mb={2}>Set the width (px):</Text>
+            <Input
+              type="number"
+              value={width}
+              onChange={(e) => setWidth(e.target.value)}
+              placeholder="Width in px"
+            />
+
+            <Text mt={4} mb={2}>Set the height (px):</Text>
+            <Input
+              type="number"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+              placeholder="Height in px"
+            />
+
+            <Text mt={4} mb={2}>Set the DPI:</Text>
+            <Input
+              type="number"
+              value={dpi}
+              onChange={(e) => setDpi(e.target.value)}
+              placeholder="DPI (e.g., 72, 96, 300)"
+            />
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="blue" onClick={() => setIsModalOpen(false)}>
