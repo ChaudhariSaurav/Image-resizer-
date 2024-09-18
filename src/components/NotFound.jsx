@@ -1,25 +1,34 @@
-// components/NotFound.js
 import React from 'react';
-import { Button, Heading, Text, VStack } from '@chakra-ui/react';
-import { useNavigate } from 'react-router-dom';
+import {
+  Heading,
+  Text,
+  Button,
+  VStack,
+  Center,
+} from '@chakra-ui/react';
+import { Link } from 'react-router-dom'; // Ensure you have react-router-dom installed
 
 const NotFound = () => {
-  const navigate = useNavigate();
-
   return (
-    <VStack
-      spacing={4}
-      align="center"
-      justify="center"
-      height="100vh"
-      textAlign="center"
-    >
-      <Heading as="h1" size="2xl">404</Heading>
-      <Text fontSize="xl">Page Not Found</Text>
-      <Button colorScheme="blue" onClick={() => navigate('/')}>
-        Go to Home
-      </Button>
-    </VStack>
+    <Center h="100vh" bg="gray.50">
+      <VStack spacing={6} textAlign="center">
+        <Heading as="h1" size="2xl">
+          404 - Page Not Found
+        </Heading>
+        <Text fontSize="lg" color="gray.600">
+          Sorry, the page you are looking for does not exist.
+        </Text>
+
+        <Button
+          as={Link}
+          to="/"
+          colorScheme="teal"
+          size="lg"
+        >
+          Go to Homepage
+        </Button>
+      </VStack>
+    </Center>
   );
 };
 

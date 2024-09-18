@@ -19,13 +19,13 @@ import {
   Spinner,
   Alert,
   AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react";
 import { useDropzone } from "react-dropzone";
-import { FaDropbox, FaGoogleDrive, FaUpload } from "react-icons/fa";
+import { FaUpload } from "react-icons/fa";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
-import { listenForUserPlan } from "../utils/firebaseUtils"; // Adjust the import according to your setup
-import { auth } from "../config/firebase"; // Ensure this import is correct
 
 const ImageResizer = () => {
   const [image, setImage] = useState(null);
@@ -33,40 +33,48 @@ const ImageResizer = () => {
   const [compressionQuality, setCompressionQuality] = useState(100);
   const [desiredSize, setDesiredSize] = useState(100); // in KB
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [resizeCount, setResizeCount] = useState(0);
   const [resizeLimit, setResizeLimit] = useState(5);
+  const [showLimitAlert, setShowLimitAlert] = useState(false);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // useEffect(() => {
-  //   const fetchPlanData = async () => {
-  //     try {
-  //       const user = auth.currentUser;
-  //       if (user) {
-  //         const plan = await listenForUserPlan(user.uid);
-  //         setResizeLimit(plan.maxResizes);
-  //       } else {
-  //         throw new Error("User is not authenticated.");
-  //       }
-  //     } catch (error) {
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to fetch plan information.",
-  //         status: "error",
-  //         duration: 5000,
-  //         isClosable: true,
-  //       });
-  //     }
-  //   };
+  // Retrieve the resize count from localStorage on load
+  useEffect(() => {
+    const storedResizeData = JSON.parse(localStorage.getItem("resizeCount"));
+    if (storedResizeData) {
+      const { count, timestamp } = storedResizeData;
+      const oneDayInMillis = 24 * 60 * 60 * 1000;
+      const currentTime = new Date().getTime();
 
-  //   fetchPlanData();
-  // }, [toast]);
+      if (currentTime - timestamp < oneDayInMillis) {
+        setResizeCount(count);
+      } else {
+        localStorage.removeItem("resizeCount"); // Remove data after one day
+      }
+    }
+  }, []);
+
+  // Update the resize count in localStorage after every resize
+  useEffect(() => {
+    if (resizeCount > 0) {
+      const data = {
+        count: resizeCount,
+        timestamp: new Date().getTime(),
+      };
+      localStorage.setItem("resizeCount", JSON.stringify(data));
+    }
+  }, [resizeCount]);
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: "image/*",
+    accept: {
+      "image/jpeg": [".jpg", ".jpeg", ".jfif", ".pjpeg", ".pjp"],
+      "image/png": [".png"],
+      "image/webp": [".webp"],
+      "image/gif": [".gif"]
+    },
     onDrop: (acceptedFiles) => {
       const file = acceptedFiles[0];
       setImage(URL.createObjectURL(file));
@@ -77,19 +85,13 @@ const ImageResizer = () => {
     if (!image) return;
 
     if (resizeCount >= resizeLimit) {
-      toast({
-        title: "Resize Limit Reached",
-        description: `You have reached the limit of ${resizeLimit} resizes. Current resize count: ${resizeCount}`,
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
-      });
+      setShowLimitAlert(true); // Show the alert
       return;
     }
 
     setLoading(true);
-    setProgress(0);
     setResizedImage(null);
+    setShowLimitAlert(false); // Hide the alert if it was previously shown
 
     try {
       const imageFile = await fetch(image).then((res) => res.blob());
@@ -104,17 +106,17 @@ const ImageResizer = () => {
       const compressedUrl = URL.createObjectURL(compressedFile);
 
       setResizedImage(compressedUrl);
-      setProgress(100);
       setResizeCount((prev) => prev + 1);
       toast({
         title: "Image Resized",
-        description: `Your image has been resized and compressed. Resize count: ${
-          resizeCount + 1
-        }`,
+        description: `Your image has been resized and compressed. Resize count: ${resizeCount + 1}`,
         status: "success",
         duration: 5000,
         isClosable: true,
       });
+
+      // Close the modal after resizing is done
+      setTimeout(() => onClose(), 500); // Adjust timeout if needed
     } catch (error) {
       toast({
         title: "Error",
@@ -158,52 +160,31 @@ const ImageResizer = () => {
       });
   };
 
-  const handleGoogleDrive = () => {
-    toast({
-      title: "Google Drive Integration",
-      description: "Google Drive integration is not yet implemented.",
-      status: "info",
-      duration: 5000,
-      isClosable: true,
-    });
-  };
-
   const handleDownload = () => {
     if (resizedImage) {
       const link = document.createElement("a");
       link.href = resizedImage;
       link.download = "resized-image.jpg";
       link.click();
+
+      setResizedImage(null);
+      setImage(null); // Optional: Uncomment if you want to clear the original image as well
     }
   };
 
-  const handleReset = () => {
-    setImage(null);
-    setResizedImage(null);
-    setProgress(0);
-    setResizeCount(0);
-    toast({
-      title: "Reset",
-      description: "Image and progress have been reset.",
-      status: "info",
-      duration: 5000,
-      isClosable: true,
-    });
-  };
-
   return (
-    <Box
-      p={5}
-      bgImage="url('https://formspree.io/img/watermark.svg')"
-      bgSize="cover"
-      bgPosition="center"
-    >
-      <Box mb={4}>
-        <Alert status="warning">
+    <Box p={5}>
+      {/* Resize Limit Alert */}
+      {resizeCount >= resizeLimit && (
+        <Alert status="warning" mb={4}>
           <AlertIcon />
-          Resize Limit: {resizeCount} / {resizeLimit}
+          <AlertTitle>Resize Limit Reached</AlertTitle>
+          <AlertDescription>
+            You have reached the limit of {resizeLimit} resizes. You can try again after 24
+            hours.
+          </AlertDescription>
         </Alert>
-      </Box>
+      )}
 
       <Box
         mb={4}
@@ -219,32 +200,6 @@ const ImageResizer = () => {
         </Text>
         <Button leftIcon={<FaUpload />} colorScheme="blue">
           Upload Image
-        </Button>
-      </Box>
-
-      <Box mb={4}>
-        <Button
-          leftIcon={<FaDropbox />}
-          onClick={() =>
-            toast({
-              title: "Dropbox Integration",
-              description: "Dropbox integration is not yet implemented.",
-              status: "info",
-              duration: 5000,
-              isClosable: true,
-            })
-          }
-          w="full"
-          mb={4}
-        >
-          From Dropbox
-        </Button>
-        <Button
-          leftIcon={<FaGoogleDrive />}
-          onClick={handleGoogleDrive}
-          w="full"
-        >
-          From Google Drive
         </Button>
       </Box>
 
@@ -284,7 +239,7 @@ const ImageResizer = () => {
         </Box>
       )}
 
-      {loading && <Spinner mt={4} />}
+      {loading && <Progress size="xs" isIndeterminate mt={4} />}
 
       {resizedImage && (
         <Box mt={4}>
@@ -294,10 +249,6 @@ const ImageResizer = () => {
           </Button>
         </Box>
       )}
-
-      <Button mt={4} colorScheme="red" w="full" onClick={handleReset}>
-        Reset
-      </Button>
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
@@ -320,7 +271,7 @@ const ImageResizer = () => {
                 onChange={(e) => setDesiredSize(Number(e.target.value))}
               />
             </FormControl>
-            <Progress mt={4} value={progress} />
+            <Progress mt={4} size="xs" isIndeterminate />
           </ModalBody>
           <ModalFooter>
             <Button

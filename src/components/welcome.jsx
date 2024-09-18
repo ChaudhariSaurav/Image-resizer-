@@ -13,6 +13,7 @@ const WelcomePage = () => {
       <TestimonialsSection />
       <PricingSection />
       <ContactSection />
+ 
     </>
   );
 };

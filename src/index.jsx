@@ -10,6 +10,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 			<Layout>
 				<UserRoute />
 			</Layout>
+		
 		</ChakraProvider>
 	</React.StrictMode>,
 );

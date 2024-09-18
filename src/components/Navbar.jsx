@@ -13,10 +13,16 @@ import {
   Avatar,
   Image,
   Menu,
+  Divider,
+  Switch,
   MenuButton,
   MenuList,
   MenuItem,
+  Text,
+  useColorMode,
+  useColorModeValue,
 } from "@chakra-ui/react";
+
 import {
   FaHome,
   FaCompress,
@@ -26,15 +32,17 @@ import {
   FaTimes,
   FaBoxOpen
 } from "react-icons/fa";
+import { BsFillPersonFill, BsGraphUp, BsFillGearFill } from "react-icons/bs";
+import { HiOutlineLightBulb } from "react-icons/hi";
 import { AiOutlineTransaction } from "react-icons/ai";
-import { MdOutlineFeedback, MdNotifications } from "react-icons/md";
+import { MdOutlineFeedback, MdOutlineRssFeed } from "react-icons/md";
+import { BsFiletypePdf } from "react-icons/bs";
+
 import useDataStore from "../zustand/userDataStore";
 import { userSignOut } from "../service/auth";
 import UserSubscription from "../utils/SubscriptionPlan";
-import { MdOutlineRssFeed } from 'react-icons/md';
-import { BsFiletypePdf } from "react-icons/bs";
 import { database } from "../config/firebase";
-import { ref } from "firebase/database";
+import { ref, get } from "firebase/database";
 
 const Navbar = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -49,52 +57,69 @@ const Navbar = () => {
       const snapshot = await get(userRef);
       if (snapshot.exists()) {
         const data = snapshot.val();
-        return data.name || ''; // Return only the name property
+        return data.name || '';
       } else {
         console.log("No user data available");
-        return ''; // Return an empty string if no name is available
+        return '';
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
-      return ''; // Return an empty string in case of error
+      return '';
     }
   };
-  
-
 
   useEffect(() => {
     if (user) {
       if (user.photoURL) {
         setAvatarUrl(user.photoURL);
       }
-  
+
       const userId = user?.id;
       if (userId) {
         fetchUserData(userId).then(userName => {
-          setName(userName?.name); // Set only the name
+          setName(userName);
         });
       }
     }
   }, [user]);
-  
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectUrl = urlParams.get('redirecturl');
+    if (redirectUrl && isLoggedIn) {
+      window.location.href = `${redirectUrl}`;
+    }
+  }, [isLoggedIn]);
 
   const handleLogout = async () => {
     try {
       await userSignOut();
+      window.location.href = ('/');
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
 
+  const buildUrl = (path, params = {}) => {
+    const url = new URL(window.location.origin + path);
+    Object.keys(params).forEach(key => url.searchParams.set(key, params[key]));
+    return url.toString();
+  };
+
+  const handleRedirect = (path, extraParams) => {
+    const currentUrl = window.location.href;
+    const params = { returnurl: encodeURIComponent(currentUrl), ...extraParams };
+    window.location.href = buildUrl(path, params);
+  };
+
   const handleLogin = () => {
-    window.location.href = "/login";
+    handleRedirect('/login', { ssrc: 'head' });
   };
 
   const handleRegister = () => {
-    window.location.href = "/register";
+    handleRedirect('/register', { ssrc: 'head' });
   };
 
-  // Define navItems based on login state
   const navItems = isLoggedIn
     ? [
         { name: "Home", icon: FaHome, href: "/" },
@@ -104,14 +129,11 @@ const Navbar = () => {
         {
           name: "Subscription",
           icon: FaBoxOpen,
-          submenu: <UserSubscription /> // Ensure this component returns the correct submenu items
+          submenu: <UserSubscription />
         },
       ]
-    : [
-        { name: "Home", icon: FaHome, href: "/" },
-      ];
+    : [{ name: "Home", icon: FaHome, href: "/" }];
 
-     
   return (
     <Flex
       as="nav"
@@ -145,7 +167,7 @@ const Navbar = () => {
           <React.Fragment key={item.name}>
             {item.submenu ? (
               <Menu>
-                <MenuButton as={Button} rightIcon={<FaCompress />}>
+                <MenuButton as={Link} rightIcon={<FaCompress />}>
                   {item.name}
                 </MenuButton>
                 <MenuList>{item.submenu}</MenuList>
@@ -161,45 +183,49 @@ const Navbar = () => {
           </React.Fragment>
         ))}
         {isLoggedIn ? (
-          <Menu>
-            <MenuButton>
-              <Avatar src={avatarUrl} size="sm" />
-            </MenuButton>
-            <MenuList>
-              {avatarUrl && (
-                <MenuItem>
-                  <Avatar src={avatarUrl} size="md" />
-                </MenuItem>
-              )}
-              <MenuItem>{name}</MenuItem>
-              <MenuItem>{user?.email}</MenuItem>
-              <Link href="/profile">
-                <MenuItem icon={<MdOutlineRssFeed />}>Profile</MenuItem>
-              </Link>
-              <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
-                Logout
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        ) : (
-          <>
-            <Button
-              colorScheme="teal"
-              variant="outline"
-              onClick={handleLogin}
-              leftIcon={<FaSignInAlt />}
-            >
-              Login
-            </Button>
-            <Button
-              colorScheme="teal"
-              variant="solid"
-              onClick={handleRegister}
-            >
-              Register
-            </Button>
-          </>
-        )}
+        <Menu>
+          <MenuButton>
+            <Avatar src={avatarUrl} size="sm" />
+          </MenuButton>
+          <MenuList>
+            <VStack align="start" p={4}>
+              <Avatar src={avatarUrl} size="lg" mb={2} />
+              <Text fontWeight="bold">{name}</Text>
+              <Text fontSize="sm" color="gray.500">
+                {user?.email}
+              </Text>
+            </VStack>
+            <Divider />
+
+
+            {/* Profile Menu Items */}
+            <MenuItem icon={<BsFillPersonFill />}>Your profile</MenuItem>
+            <MenuItem icon={<BsFillGearFill />}>Account settings</MenuItem>
+
+            <Divider />
+
+            {/* Logout */}
+            <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
+              Logout
+            </MenuItem>
+          </MenuList>
+        </Menu>
+      ) : (
+        <Flex>
+          <Button
+            colorScheme="teal"
+            variant="outline"
+            onClick={handleLogin}
+            leftIcon={<FaSignInAlt />}
+            mr={2}
+          >
+            Login
+          </Button>
+          <Button colorScheme="teal" variant="solid" onClick={handleRegister}>
+            Register
+          </Button>
+        </Flex>
+      )}
       </HStack>
 
       {/* Mobile View */}
@@ -236,7 +262,7 @@ const Navbar = () => {
                     onClick={onClose}
                     _hover={{ textDecoration: "none", color: "teal.200" }}
                   >
-                    <HStack width="full" spacing="4">
+                    <HStack>
                       {item.icon && <Icon as={item.icon} />}
                       <span>{item.name}</span>
                     </HStack>
@@ -245,48 +271,24 @@ const Navbar = () => {
               </React.Fragment>
             ))}
             {isLoggedIn ? (
-              <VStack spacing="4" align="stretch">
-                <Menu>
-                  <MenuButton width="full">
-                    <Avatar src={avatarUrl} size="sm" />
-                  </MenuButton>
-                  <MenuList>
-                    {avatarUrl && (
-                      <MenuItem>
-                        <Avatar src={avatarUrl} size="md" />
-                      </MenuItem>
-                    )}
-                    <MenuItem>Name: {name}</MenuItem>
-                    <MenuItem>Email: {user?.email}</MenuItem>
-                    <Link href="/profile">
-                      <MenuItem icon={<MdOutlineRssFeed />}>Profile</MenuItem>
-                    </Link>
-                    <MenuItem onClick={handleLogout} icon={<FaSignOutAlt />}>
-                      Logout
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
-              </VStack>
+              <Button width="full" onClick={handleLogout}>
+                Logout
+              </Button>
             ) : (
-              <VStack spacing="4" align="stretch">
+              <Flex direction="column">
                 <Button
                   colorScheme="teal"
                   variant="outline"
                   onClick={handleLogin}
                   leftIcon={<FaSignInAlt />}
-                  w="full"
+                  mb={2}
                 >
                   Login
                 </Button>
-                <Button
-                  colorScheme="teal"
-                  variant="solid"
-                  onClick={handleRegister}
-                  w="full"
-                >
+                <Button colorScheme="teal" variant="solid" onClick={handleRegister}>
                   Register
                 </Button>
-              </VStack>
+              </Flex>
             )}
           </VStack>
         </Box>

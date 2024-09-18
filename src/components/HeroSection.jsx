@@ -10,6 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { FaArrowRight, FaImage } from "react-icons/fa";
 import ImageResizer from "./ImageResizer";
+import SignatureUpload from "./Signature_Upload";
 
 const HeroSection = () => {
   const { colorMode } = useColorMode();
@@ -62,6 +63,7 @@ const HeroSection = () => {
           </Text>
           {/* Add more content for the Image Resize section here */}
           <ImageResizer/>
+          <SignatureUpload/>
         </Container>
       </Box>
     </>

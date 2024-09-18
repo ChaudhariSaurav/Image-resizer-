@@ -10,10 +10,21 @@ import {
   Box,
   useToast,
   Link,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Image,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { registerUser } from "../service/auth";
 import { useDropzone } from "react-dropzone";
 import { ChevronLeftIcon } from "@chakra-ui/icons";
+import ReactCrop from "react-image-crop";
+import 'react-image-crop/dist/ReactCrop.css';
 
 const RegisterPage = () => {
   const {
@@ -35,10 +46,16 @@ const RegisterPage = () => {
   const toast = useToast();
   const [isLoading, setIsLoading] = React.useState(false);
   const [profileImage, setProfileImage] = React.useState(null);
+  const [imageToCrop, setImageToCrop] = React.useState(null);
+  const [croppedImage, setCroppedImage] = React.useState(null);
+  const [crop, setCrop] = React.useState({ unit: '%', width: 30, aspect: 1 });
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const onDrop = React.useCallback((acceptedFiles) => {
-    setProfileImage(acceptedFiles[0]);
-  }, []);
+    const file = acceptedFiles[0];
+    setImageToCrop(URL.createObjectURL(file));
+    onOpen();
+  }, [onOpen]);
 
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
@@ -46,14 +63,45 @@ const RegisterPage = () => {
     maxFiles: 1, // Ensure only one file is accepted
   });
 
+  const handleCropComplete = (crop) => {
+    if (imageToCrop && crop.width && crop.height) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const image = document.createElement('img');
+      image.src = imageToCrop;
+      image.onload = () => {
+        canvas.width = crop.width;
+        canvas.height = crop.height;
+        ctx.drawImage(
+          image,
+          crop.x,
+          crop.y,
+          crop.width,
+          crop.height,
+          0,
+          0,
+          crop.width,
+          crop.height
+        );
+        const croppedImageURL = canvas.toDataURL();
+        setCroppedImage(croppedImageURL);
+      };
+    }
+  };
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     const { email, password, name, dob, mobileNo } = data;
 
     try {
-      if (!profileImage) {
-        throw new Error("Please upload a profile image.");
+      if (!croppedImage) {
+        throw new Error("Please crop and upload a profile image.");
       }
+
+      // Convert croppedImage back to a file object if needed
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      const file = new File([blob], 'profile-image.jpg', { type: 'image/jpeg' });
 
       // Register the user
       await registerUser(
@@ -62,12 +110,13 @@ const RegisterPage = () => {
         name,
         dob,
         mobileNo,
-        profileImage
+        file
       );
 
       // Reset form fields and profile image
       reset();
       setProfileImage(null);
+      setCroppedImage(null);
 
       toast({
         title: "Registration Successful",
@@ -250,18 +299,12 @@ const RegisterPage = () => {
               textAlign="center"
             >
               <input {...getInputProps()} />
-              {profileImage ? (
-                <Text>{profileImage.name}</Text>
+              {croppedImage ? (
+                <Image src={croppedImage} alt="Profile Image" boxSize="100px" objectFit="cover" />
               ) : (
                 <Text>Drag & drop a profile image here, or click to select one</Text>
               )}
             </Box>
-            {profileImage && (
-              <Box mt={2}>
-                <Text fontSize="sm">Selected file:</Text>
-                <Text>{profileImage.name}</Text>
-              </Box>
-            )}
           </FormControl>
 
           <Button colorScheme="teal" type="submit" isLoading={isLoading}>
@@ -276,6 +319,32 @@ const RegisterPage = () => {
           </Link>
         </Box>
       </form>
+
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Crop Image</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {imageToCrop && (
+              <ReactCrop
+                src={imageToCrop}
+                crop={crop}
+                onChange={setCrop}
+                onComplete={handleCropComplete}
+              />
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" onClick={onClose}>
+              Save
+            </Button>
+            <Button variant="ghost" ml={3} onClick={() => setImageToCrop(null)}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

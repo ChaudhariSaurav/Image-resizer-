@@ -14,11 +14,26 @@ import {
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
-  useBreakpointValue
+  useBreakpointValue,
 } from "@chakra-ui/react";
-import { ArrowForwardIcon, CheckCircleIcon, RepeatClockIcon, LockIcon } from "@chakra-ui/icons";
 
-const heroImage = "https://lp.simplified.com/siteimages/design/image-resizer-01.png";
+import {
+  CheckCircleIcon,
+  RepeatClockIcon,
+  LockIcon,
+  EditIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
+  ArrowForwardIcon,
+  InfoIcon,
+  WarningIcon,
+  StarIcon,
+  TimeIcon,
+  AddIcon,
+} from "@chakra-ui/icons";
+
+const heroImage =
+  "https://lp.simplified.com/siteimages/design/image-resizer-01.png";
 
 const featureData = [
   {
@@ -36,45 +51,118 @@ const featureData = [
     text: "Our tool is free to use and ensures that your images are processed securely.",
     icon: <LockIcon boxSize={10} color="teal.500" />,
   },
+  {
+    title: "Multiple Formats Supported",
+    text: "Resize images and PDFs in various formats including JPG, PNG, PDF, and more.",
+    icon: <EditIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "High-Quality Output",
+    text: "Ensure high-quality output with minimal loss during compression.",
+    icon: <StarIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "Batch Processing",
+    text: "Process multiple files at once to save time and effort.",
+    icon: <DownloadIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "Custom Resizing",
+    text: "Set custom dimensions for images and PDFs to fit your needs.",
+    icon: <ExternalLinkIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "Preview Before Saving",
+    text: "Preview your resized images or PDFs before finalizing the download.",
+    icon: <ArrowForwardIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "Compression Settings",
+    text: "Adjust compression settings to balance quality and file size.",
+    icon: <InfoIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "Quick and Efficient",
+    text: "Experience fast processing times for a smoother user experience.",
+    icon: <TimeIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "Error Handling",
+    text: "Handle errors gracefully with informative messages and guidance.",
+    icon: <WarningIcon boxSize={10} color="teal.500" />,
+  },
+  {
+    title: "User Support",
+    text: "Access help and support for any questions or issues you may have.",
+    icon: <AddIcon boxSize={10} color="teal.500" />,
+  },
 ];
 
 const faqData = [
   {
     question: "What image formats are supported?",
-    answer: "We support a wide range of image formats including JPG, PNG, GIF, and more."
+    answer:
+      "We support a wide range of image formats including JPG, PNG, GIF, and more.",
   },
   {
     question: "Is there a limit on image size?",
-    answer: "Yes, our tool supports images up to 20MB in size. For larger images, please contact our support."
+    answer:
+      "Yes, our tool supports images up to 20MB in size. For larger images, please contact our support.",
   },
   {
     question: "How secure is my data?",
-    answer: "Your data is highly secure. We use encryption and adhere to strict privacy policies to ensure the safety of your images."
+    answer:
+      "Your data is highly secure. We use encryption and adhere to strict privacy policies to ensure the safety of your images.",
   },
   {
     question: "Do I need to create an account to use the tool?",
-    answer: "No, you do not need to create an account to use our image resizing tool. It’s free and accessible to everyone."
+    answer:
+      "No, you do not need to create an account to use our image resizing tool. It’s free and accessible to everyone.",
   },
   {
     question: "What are the benefits of creating an account?",
-    answer: "Creating an account allows you to save your preferences, access your resize history, and receive personalized recommendations. Additionally, you'll get faster access to new features and updates."
+    answer:
+      "Creating an account allows you to save your preferences, access your resize history, and receive personalized recommendations. Additionally, you'll get faster access to new features and updates.",
   },
   {
     question: "Can I manage my resized images if I create an account?",
-    answer: "Yes, with an account, you can manage your resized images, organize them into folders, and easily retrieve them whenever needed."
+    answer:
+      "Yes, with an account, you can manage your resized images, organize them into folders, and easily retrieve them whenever needed.",
   },
   {
     question: "How do I create an account?",
-    answer: "To create an account, click on the 'Sign Up / Register ' button on the top of this page and fill in the required details. It’s quick and easy!"
+    answer:
+      "To create an account, click on the 'Sign Up / Register ' button on the top of this page and fill in the required details. It’s quick and easy!",
   },
 ];
 
 function HomePage() {
-  const gridTemplateColumns = useBreakpointValue({ base: '1fr', md: 'repeat(3, 1fr)' });
+  const gridTemplateColumns = useBreakpointValue({
+    base: "1fr",
+    md: "repeat(3, 1fr)",
+  });
 
   const handleLoginButton = () => {
     window.location.href = "/login";
   };
+
+  const FeatureCard = ({ title, text, icon }) => (
+    <Box
+      borderWidth={1}
+      borderRadius="lg"
+      p={5}
+      shadow="md"
+      textAlign="center"
+      borderColor="gray.200"
+      bg="white"
+    >
+      <Box mb={4}>{icon}</Box>
+      <Text fontWeight="bold" mb={2}>
+        {title}
+      </Text>
+      <Text color="gray.600">{text}</Text>
+    </Box>
+  );
 
   return (
     <Box>
@@ -94,7 +182,8 @@ function HomePage() {
             Resize Your Images Effortlessly
           </Heading>
           <Text fontSize="xl" mb={6}>
-            Easily resize your images to the desired dimensions without compromising quality.
+            Easily resize your images to the desired dimensions without
+            compromising quality.
           </Text>
           <Button
             colorScheme="teal"
@@ -116,7 +205,7 @@ function HomePage() {
       </Box>
 
       {/* Features Section */}
-      <Box p={10} bg="gray.100">
+      <Box p={5} bg="gray.100">
         <Container maxW="container.md">
           <VStack spacing={8} align="stretch">
             <Heading as="h2" size="xl" textAlign="center">
@@ -136,9 +225,14 @@ function HomePage() {
                   flexDirection="column"
                   alignItems="center"
                   justifyContent="center"
+                  transition="all 0.3s"
+                  _hover={{
+                    shadow: "md",
+                    borderColor: "blue.400",
+                  }}
                 >
                   {feature.icon}
-                  <Heading as="h3" size="lg" mt={4} mb={4}>
+                  <Heading as="h4" size="lg" mt={4} mb={4}>
                     {feature.title}
                   </Heading>
                   <Text>{feature.text}</Text>
@@ -164,31 +258,10 @@ function HomePage() {
                   </Box>
                   <AccordionIcon />
                 </AccordionButton>
-                <AccordionPanel pb={4}>
-                  {item.answer}
-                </AccordionPanel>
+                <AccordionPanel pb={4}>{item.answer}</AccordionPanel>
               </AccordionItem>
             ))}
           </Accordion>
-        </Container>
-      </Box>
-
-      {/* Call to Action */}
-      <Box bg="teal.500" color="white" textAlign="center" p={10}>
-        <Container maxW="container.md">
-          <Heading as="h2" size="xl" mb={4}>
-            Ready to Resize Your Images?
-          </Heading>
-          <Text fontSize="lg" mb={6}>
-            Start using our tool today and experience effortless image resizing!
-          </Text>
-          <Button
-            colorScheme="teal"
-            size="lg"
-            rightIcon={<ArrowForwardIcon />}
-          >
-            Get Started
-          </Button>
         </Container>
       </Box>
     </Box>

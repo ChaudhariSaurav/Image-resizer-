@@ -22,10 +22,11 @@ const Footer = () => {
       bg="gray.900"
       color="white"
       py={{ base: "6", md: "8" }}
-      position="relative"
-      bottom="0"
-      left="0"
+      position={{ base: "relative", md: "relative" }} // Fixed position on mobile, relative on larger screens
+      bottom={0}
+      left={0}
       width="100%"
+      zIndex={10} // Ensure it appears above other content
       boxShadow="md"
     >
       <Container maxW="container.xl">
@@ -34,38 +35,57 @@ const Footer = () => {
           gap={8}
           textAlign={{ base: "center", md: "left" }}
         >
-          {/* Logo Section */}
-          <Box>
-            <Image src="https://cdn.icon-icons.com/icons2/1381/PNG/512/com_94698.png" alt="Logo" boxSize="90px" mb={4} />
-            <Text fontSize="lg" fontWeight="bold">Image Resize</Text>
-          </Box>
-
           {/* Column 1: Links */}
           <Box>
-            <Text fontSize="lg" fontWeight="bold" mb={4}>Quick Links</Text>
+            <Text fontSize="lg" fontWeight="bold" mb={4}>
+              Quick Links
+            </Text>
             <Flex direction="column" gap={2}>
-              <Link href="#" color="whiteAlpha.800">Home</Link>
-              <Link href="#" color="whiteAlpha.800">About</Link>
-              <Link href="#" color="whiteAlpha.800">Services</Link>
-              <Link href="#" color="whiteAlpha.800">Contact</Link>
+              <Link href="#" color="whiteAlpha.800">
+                Home
+              </Link>
+              <Link href="#" color="whiteAlpha.800">
+                About
+              </Link>
+              <Link href="#" color="whiteAlpha.800">
+                Services
+              </Link>
+              <Link href="#" color="whiteAlpha.800">
+                Contact
+              </Link>
             </Flex>
           </Box>
 
           {/* Column 2: Resources */}
           <Box>
-            <Text fontSize="lg" fontWeight="bold" mb={4}>Resources</Text>
+            <Text fontSize="lg" fontWeight="bold" mb={4}>
+              Resources
+            </Text>
             <Flex direction="column" gap={2}>
-              <Link href="#" color="whiteAlpha.800">Blog</Link>
-              <Link href="#" color="whiteAlpha.800">Help Center</Link>
-              <Link href="#" color="whiteAlpha.800">Privacy Policy</Link>
-              <Link href="#" color="whiteAlpha.800">Terms of Service</Link>
+              <Link href="#" color="whiteAlpha.800">
+                Blog
+              </Link>
+              <Link href="#" color="whiteAlpha.800">
+                Help Center
+              </Link>
+              <Link href="#" color="whiteAlpha.800">
+                Privacy Policy
+              </Link>
+              <Link href="#" color="whiteAlpha.800">
+                Terms of Service
+              </Link>
             </Flex>
           </Box>
 
           {/* Column 3: Follow Us */}
-          <Box>
-            <Text fontSize="lg" fontWeight="bold" mb={4}>Follow Us</Text>
-            <HStack spacing={spacing}>
+          <Box textAlign={{ base: "center", md: "left" }}>
+            <Text fontSize="lg" fontWeight="bold" mb={4}>
+              Follow Us
+            </Text>
+            <HStack
+              spacing={spacing}
+              justify={{ base: "center", md: "flex-start" }}
+            >
               <Link href="https://twitter.com" isExternal>
                 <Icon as={FaTwitter} boxSize="6" />
               </Link>
@@ -80,13 +100,14 @@ const Footer = () => {
               </Link>
             </HStack>
           </Box>
-
           {/* Column 4: Contact Info */}
           <Box>
-            <Text fontSize="lg" fontWeight="bold" mb={4}>Contact Info</Text>
+            <Text fontSize="lg" fontWeight="bold" mb={4}>
+              Contact Info
+            </Text>
             <Flex direction="column" gap={2}>
-              <Text>Email: info@yourcompany.com</Text>
-              <Text>Phone: +1 234 567 890</Text>
+              <Text>Email: onlinetestmail93@gmail.com</Text>
+              <Text>Phone: 9876543210</Text>
               <Text>Address: 123 Your Street, City, Country</Text>
             </Flex>
           </Box>
@@ -94,7 +115,9 @@ const Footer = () => {
 
         {/* Bottom Text */}
         <Box mt={8} textAlign="center" color="whiteAlpha.600">
-          <Text fontSize="sm">© {new Date().getFullYear()} Your Company. All rights reserved.</Text>
+          <Text fontSize="sm">
+            © {new Date().getFullYear()} Your Company. All rights reserved.
+          </Text>
         </Box>
       </Container>
     </Box>

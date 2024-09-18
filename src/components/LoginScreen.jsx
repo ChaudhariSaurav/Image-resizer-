@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { userLogin, GoogleLogin } from "../service/auth";
 import { FaGoogle } from "react-icons/fa";
 import useDataStore from "../zustand/userDataStore";
+import { FcGoogle } from "react-icons/fc";
 
 const LoginPage = () => {
   const {
@@ -215,16 +216,27 @@ const LoginPage = () => {
           </Link>
         </Text>
       </Box>
-
+      <HStack mt={4}>
+                <Divider />
+                <Text fontSize="md" whiteSpace="nowrap" color="muted">
+                Or sign in with:
+                </Text>
+                <Divider />
+              </HStack>
       <Box textAlign="center">
-        <Box position='relative' padding='10'>
-          <Divider />
-          <AbsoluteCenter bg='white' px='4'>
-            <Text>Or sign in with:</Text>
-          </AbsoluteCenter>
+        <Box position='relative' padding='5'>
         </Box>
+    
+              <Button 
+                variant="outline" 
+                leftIcon={<FcGoogle />}
+                w={'100%'}
+                onClick={handleGoogleLogin}
+              >
+                Sign in with Google
+              </Button>
 
-        <Stack spacing={4} direction="row" justify="center">
+        {/* <Stack spacing={4} direction="row" justify="center">
           <IconButton
             aria-label="Sign in with Google"
             p={5}
@@ -240,7 +252,7 @@ const LoginPage = () => {
             w="full"
             justifyContent="flex-start"
           />
-        </Stack>
+        </Stack> */}
       </Box>
     </Box>
   );
